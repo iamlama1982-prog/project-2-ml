@@ -1,7 +1,7 @@
 ![Ironhack logo](https://user-images.githubusercontent.com/23629340/40541063-a07a0a8a-601a-11e8-91b5-2f13e4e6b441.png)
 # Predicting Customer Churn
 
-## Project 2 — Machine Learning: From Data to Predictions
+## Project 2  Machine Learning: From Data to Predictions
 
 This project looks at a fairly simple business question:
 
@@ -249,9 +249,9 @@ Best cross-validated recall:
 0.781 ± 0.035
 ```
 
-The tuned Logistic Regression performed slightly better and was also the simpler model to explain, so I selected it as the final model. The difference in mean recall was only about **0.020**, which is smaller than the normal fold-to-fold variation in either tuned model. That makes simplicity and interpretability a sensible tie-breaker rather than pretending the two models are meaningfully far apart.
+The two tuned models are close. Logistic Regression is only about **0.020** higher on mean recall, and that gap is smaller than the normal variation between folds. I would not claim that it massively outperformed the Decision Tree. It wins narrowly on recall, and it is also much easier to explain and use in practice. That is enough for me to choose it.
 
-Using balanced class weights made a substantial difference. The best Logistic Regression kept the default `C=1`, so the jump from the original 0.544 recall to 0.801 was driven mainly by giving the less common churn class more weight during training.
+The big improvement came from `class_weight="balanced"`, not from complicated tuning. The best Logistic Regression kept the default `C=1`; giving the less common churn class more weight is what moved recall from 0.544 to 0.801.
 
 ---
 
@@ -306,9 +306,9 @@ a difference of only:
 -0.018
 ```
 
-That relatively small drop suggests that the cross-validation estimate generalised reasonably well to unseen customers.
+That is a small drop and it sits comfortably inside the variation I had already seen during cross-validation. In other words, the test result looks stable rather than like I got lucky with one split.
 
-Compared with the baseline recall of **0.000**, the model is clearly doing something useful.
+Compared with the baseline recall of **0.000**, the model is clearly finding churners rather than simply benefiting from the fact that most customers stay.
 
 ---
 
@@ -335,7 +335,7 @@ and missed:
 
 At the chosen threshold the model flags **581 of the 1,409 test customers** for retention attention. That queue contains 293 genuine churners and **288 customers who actually stayed**.
 
-For a Head of Customer Service, this is an operational capacity trade-off rather than just a model score: if the team cannot make 581 proactive contacts, the sensible use is to rank the flagged customers by model score and work the highest-risk cases first.
+For a Head of Customer Service, the useful question is no longer just "is the model accurate?" It is **can my team actually work 581 proactive contacts?** If not, I would rank the flagged customers by score and start with the highest-risk cases.
 
 For this use case, I think that is a reasonable trade-off if retention contact is relatively inexpensive.
 
@@ -439,19 +439,19 @@ It does **not** contain potentially useful information such as:
 
 It also represents one historical customer population.
 
-The model probabilities have **not been separately calibrated**, so I would treat them primarily as a ranking signal rather than claiming that a displayed 80% score means a customer has exactly an 80% real-world chance of leaving.
+The model probabilities have **not been separately calibrated**, so I would use the scores to rank customers rather than tell a manager that an 80% score means the customer has exactly an 80% real-world chance of leaving.
 
 Customer behaviour, pricing, products and competitors change, so model performance should not be assumed to stay the same forever.
 
-In a live business setting I would monitor:
+In a live business setting I would keep an eye on:
 
 - churn rate
 - recall
 - precision
-- false positive rate
-- changes in feature distributions
+- false positive workload
+- changes in the customer data going into the model
 
-and retrain or review the model if performance started to drift.
+If those started moving materially, I would review the model rather than assume it would stay useful forever.
 
 ---
 

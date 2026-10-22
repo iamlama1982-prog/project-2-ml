@@ -93,25 +93,25 @@ model, threshold, X_test, y_test, test_ids, model_source = get_model_bundle()
 st.markdown(
     """
     <div class="hero">
-        <div class="eyebrow">Customer Service Decision Support</div>
+        <div class="eyebrow">Built for Customer Service</div>
         <h1>Retention Control Room</h1>
-        <p>Turn churn predictions into a manageable call queue — who needs attention first, what workload does that create, and where should an agent use judgement?</p>
+        <p>The model can tell you who looks risky. Your operation still has to decide who gets called first, how much work the team can actually handle, and what to do with that information.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
 with st.sidebar:
-    st.subheader("Model guardrails")
+    st.subheader("What this model is for")
     st.metric("Held-out churn recall", "78.3%")
     st.metric("Held-out precision", "50.4%")
     st.metric("Decision threshold", f"{threshold:.2f}")
     st.caption(model_source)
     st.divider()
     st.markdown(
-        "**Use for:** prioritising low-cost retention outreach.\n\n"
-        "**Do not use for:** automatic discounts, contract decisions or promises that "
-        "the displayed score is a perfectly calibrated probability."
+        "**Use it for:** deciding who deserves attention first.\n\n"
+        "**Do not use it for:** automatic discounts, contract decisions, or treating the "
+        "score as a guaranteed probability."
     )
 
 queue_tab, customer_tab = st.tabs([
@@ -121,16 +121,15 @@ queue_tab, customer_tab = st.tabs([
 
 
 with queue_tab:
-    st.subheader("Build the day's retention workload")
+    st.subheader("Build today's retention queue")
     st.write(
-        "Start with the held-out demonstration portfolio, or upload a customer file using "
-        "the same columns as the IBM Telco data. The model ranks customers by churn score; "
-        "your available contact capacity decides how much of the queue can actually be worked."
+        "Start with the demo customers or upload your own customer file. The model ranks the "
+        "highest-risk customers first; you decide how many contacts the team can realistically make."
     )
 
     source = st.radio(
         "Customer source",
-        ["Held-out demo portfolio", "Upload a customer CSV"],
+        ["Held-out demo customers", "Upload a customer CSV"],
         horizontal=True,
     )
 
@@ -144,7 +143,7 @@ with queue_tab:
         )
 
         if uploaded_file is None:
-            st.info("Upload a file to build a live retention queue. Until then, switch to the demo portfolio to explore the tool.")
+            st.info("Upload a file to build a live retention queue. Or use the demo customers to see how it works first.")
             st.stop()
 
         portfolio = pd.read_csv(uploaded_file)
@@ -211,10 +210,10 @@ with queue_tab:
         if actual_churners > 0:
             caught_share = caught_churners / actual_churners
 
-        st.markdown("#### Back-test: what would this capacity have achieved?")
+        st.markdown("#### Back-test: what would this level of capacity have achieved?")
         back_1, back_2, back_3 = st.columns(3)
         back_1.metric("Known churners reached", f"{caught_churners:,} / {actual_churners:,}", f"{caught_share:.1%} of churners")
-        back_2.metric("Extra contacts", f"{false_alarms:,}", "customers who actually stayed")
+        back_2.metric("Calls to customers who stayed", f"{false_alarms:,}", "the cost of catching more churners")
         if len(queue) > 0:
             queue_hit_rate = caught_churners / len(queue)
         else:
@@ -222,16 +221,15 @@ with queue_tab:
         back_3.metric("Queue hit rate", f"{queue_hit_rate:.1%}", "demo outcomes only")
 
         st.caption(
-            "The back-test uses the known outcomes in the held-out demonstration data. "
-            "A real future queue would not know these outcomes yet."
+            "This back-test can show the answer because these customers already have known outcomes. "
+            "In a live queue, of course, you would not know who eventually churns."
         )
 
     if flagged_count > contact_capacity:
         deferred = flagged_count - contact_capacity
         st.warning(
-            f"Capacity gap: {deferred:,} additional customers are above the model threshold "
-            "but would not be contacted at this capacity. The table below therefore keeps "
-            "the highest model scores first."
+            f"Capacity gap: {deferred:,} customers are still above the model threshold but cannot be "
+            "contacted at this capacity. So the queue keeps the highest-risk customers first."
         )
     elif flagged_count > 0:
         st.success("Current capacity can cover every customer above the model threshold.")
@@ -275,8 +273,8 @@ with queue_tab:
     )
 
     st.markdown(
-        '<p class="small-note">Management note: the score is most defensible as a ranking signal. '
-        'The project did not separately calibrate probabilities, and the model cannot see recent complaints, outages, competitor offers or other live service context.</p>',
+        '<p class="small-note">Use the score to rank the queue, not as a promise that a customer has exactly that percentage chance of leaving. '
+        'The model also cannot see recent complaints, outages, competitor offers or other live service context.</p>',
         unsafe_allow_html=True,
     )
 
@@ -284,9 +282,8 @@ with queue_tab:
 with customer_tab:
     st.subheader("Score a customer live")
     st.write(
-        "Choose one of the presentation scenarios, edit anything you like, then score the "
-        "customer. The result includes an operational next step and the strongest model "
-        "signals for this specific row."
+        "Start with one of the presentation examples, change anything you like, then score the customer. "
+        "You will get a priority, a sensible next step, and the main things pushing the score up or down."
     )
 
     scenarios = scenario_customers()
@@ -486,7 +483,6 @@ with customer_tab:
                 st.write("No strong negative contribution for this row.")
 
         st.caption(
-            "The driver list is calculated from this customer's transformed Logistic Regression "
-            "feature contributions. It explains the model's score; it does not prove that any "
-            "feature caused the customer to churn."
+            "These are the features that moved this customer's score the most. They help explain what "
+            "the model is reacting to; they do not prove that any one feature causes churn."
         )

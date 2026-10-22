@@ -203,18 +203,18 @@ def action_for_score(score: float, threshold: float) -> str:
 
     if score >= 0.75:
         return (
-            "Contact early. Ask the agent to check recent service history, complaints "
-            "and current account context before deciding whether an intervention is useful."
+            "Contact early. Check recent service history, complaints and the current "
+            "account before deciding what, if anything, is worth offering."
         )
     if score >= threshold:
         return (
-            "Place in the next retention queue. Review the customer context before contact; "
-            "the model is prioritising attention, not prescribing an offer."
+            "Put this customer in the next retention queue. Check the current account context "
+            "before contact — the model is telling you who to look at, not what deal to give them."
         )
     if score >= 0.35:
         return (
-            "Keep on the watchlist. No proactive action is required unless fresh service "
-            "or complaint data raises the risk."
+            "Keep on the watchlist. No proactive contact is needed unless new service or "
+            "complaint information gives you another reason to act."
         )
     return (
         "Routine service. The model does not currently prioritise this customer "
