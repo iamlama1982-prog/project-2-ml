@@ -1,275 +1,593 @@
 ![Ironhack logo](https://user-images.githubusercontent.com/23629340/40541063-a07a0a8a-601a-11e8-91b5-2f13e4e6b441.png)
+# Predicting Customer Churn
 
-# Project 2 | Machine Learning: From Data to Predictions
+## Project 2 — Machine Learning: From Data to Predictions
 
-*Data Science & Machine Learning — Week 6*
+This project looks at a fairly simple business question:
 
-Build a supervised machine learning model that a business could actually use. You will frame a prediction problem, prepare the data, compare models honestly, evaluate the winner once, explain what drives it, and demo it live.
+> **Which customers are most likely to leave, so a retention team can contact them before they do?**
 
-`Python` · `scikit-learn` · `Pipelines` · `Cross-validation` · `Model evaluation` · `Keras (image option)`
+I used the IBM Telco Customer Churn dataset to build and evaluate a supervised machine learning model that predicts whether an existing telecom customer will churn.
+
+The aim was not simply to get the highest possible score. I wanted a model whose performance I could explain, compare honestly against a baseline, and potentially use as a practical prioritisation tool.
 
 ---
 
-## Overview
+## The data
 
-In this project you take one dataset from raw files to a saved model that predicts for new data, following the workflow template from Week 5. The point is not the highest score in the class. It is a model whose score you can trust, chosen for reasons you can explain, and judged against a baseline.
+The dataset contains **7,043 telecom customers**, with one row per customer.
 
-- **Format** — in pairs or on your own. Working in a pair, divide the work by stage, not by model, and run each other's notebooks every day.
-- **Duration** — launch on Friday of Week 5, 4 working days, presentations on Friday.
-- **Tools** — Python, pandas, scikit-learn, Matplotlib/Seaborn, joblib, Jupyter, GitHub. Keras for the image option.
-- **Repository** — click **Use this template** at the top of this page to create your own repo.
+It includes:
 
-### The goal
+- customer demographics
+- account tenure
+- contract type
+- billing and payment information
+- internet and phone services
+- monthly and total charges
+- whether the customer churned
 
-Answer one question with a model: *who will leave, what is this house worth, whom should we call, which flower is this?* By Friday you should be able to say how good your model is, compared with what, for whom, and where it should not be trusted.
+The target is:
 
-> [!IMPORTANT]
-> Choose your dataset and your target on launch day and stick with them. By Wednesday your pipeline and your cross-validation are built around your columns; switching costs four days of work in two.
-
-<br>
-
-## The workflow at a glance
-
-Your project follows the eleven steps of **The ML Workflow End to End** from Week 5. The brief, the run sheets and the rubric all use them:
-
-1. **Frame** — the target, the positive class, who uses the prediction, and the metric, chosen from the cost of each mistake.
-2. **Look** — types, missing values, duplicates, the target's distribution, columns that would not be known at prediction time.
-3. **Split once** — a fixed `random_state`, stratified for classification. The test set is not touched again until step 9.
-4. **Baseline** — a `DummyClassifier` or `DummyRegressor`, scored with cross-validation. Every model has to beat it.
-5. **Pipeline** — a `ColumnTransformer` for each column type, then the model. Everything that learns from data goes inside.
-6. **Compare** — at least three model families, the same cross-validation folds, the mean and the spread.
-7. **Tune** — a grid or random search on the best one or two, on the training set.
-8. **Threshold** — for classification, chosen from cross-validated probabilities for a stated reason.
-9. **Test once** — the final model on the test set, compared with the cross-validated estimate.
-10. **Interpret** — what drives the predictions, and where the model goes wrong.
-11. **Save** — the fitted pipeline with `joblib`, reloaded to predict new rows.
-
-The three notebooks in this template follow that order: `01_eda_and_baseline.ipynb` is steps 1–4, `02_pipelines_and_models.ipynb` is steps 5–8, and `03_evaluation_and_interpretation.ipynb` is steps 9–11.
-
-<br>
-
-## Choose your data
-
-Three tabular datasets forming a difficulty ladder, plus an image option. Read [`data/README.md`](data/README.md) for the full description of each, the traps to watch for, and its licence.
-
-| | Dataset | Task | Difficulty | Licence |
-|---|---|---|---|---|
-| **1** | **King County house sales** | Regression: the sale price | Gentler start | Public domain |
-| **2** | **Telco customer churn** | Classification: who leaves | Middle | Apache 2.0 |
-| **3** | **Bank Marketing** (UCI) | Imbalanced classification: who subscribes | Hardest | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-| **4** | **Flower photos** | Image classification: five flowers | Image option | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) |
-
-Fetch whichever you choose with the included script:
-
-```bash
-python download_data.py houses    # or: telco, bank, flowers
+```text
+Churn
 ```
 
-Files land in `data/raw/`, which is gitignored. **Do not commit data.** Anyone cloning your repo runs the same script.
+with:
 
-> [!NOTE]
-> **Bringing your own dataset?** You may, and you are graded on exactly the same rubric. It needs a clear target, at least a few thousand rows (or a few hundred images per class), features that would all be known at prediction time, and a licence that permits educational use. Clear it with your teacher on launch day, not on Wednesday.
-
-### The image option
-
-Option 4 is for the material from Week 5 Thursday: a CNN trained from scratch, then transfer learning with a pretrained network. The workflow is the same, with three differences:
-
-- **The baseline** is the majority class, then a small CNN from scratch; the real model is a pretrained network (for example `MobileNetV2`) with a new output layer.
-- **The pipeline lives in the model.** Resizing, rescaling and augmentation are Keras layers, and `image_dataset_from_directory` reads the folders. There is no `ColumnTransformer`.
-- **Validation is a fixed split**, not cross-validation: training, validation and test sets chosen once with a seed. Training on a CPU makes repeated folds too slow.
-
-It needs TensorFlow (`python -c "import tensorflow"`) and the download is 218 MB. Everything else in this brief applies.
-
-<br>
-
-## Day-by-day breakdown
-
-Launch day (Friday of Week 5) is when you settle who you are working with, pick your dataset and target, create your repo, download the data and write your framing — so Monday starts with the data in front of you.
-
-### Day 1 — EDA and baseline
-
-- Finish **`01_eda_and_baseline.ipynb`**: shape and types, data quality, the target, the features against the target.
-- **Find the columns that would not be known at prediction time** and drop them, with the reason written down.
-- **Split once** and score the **baseline** with cross-validation on the training set.
-
-> [!TIP]
-> By the end of today you should be able to say your metric and your baseline score out loud. If you cannot, you are behind.
-
-### Day 2 — Pipelines and features
-
-Today is the core engineering day, and the one the week turns on.
-
-- Build **one complete `Pipeline`**: a `ColumnTransformer` that imputes, scales and encodes each type of column, then a model.
-- Score it with **cross-validation** against the baseline.
-- Add features **inside the pipeline** — a ratio, an age, a flag, a log — and keep the ones that improve the cross-validated score.
-- *Image option:* load the folders with `image_dataset_from_directory`, add rescaling and augmentation layers, and train a CNN from scratch with early stopping. Plot the training curves.
-
-> [!IMPORTANT]
-> **Anyone without a pipeline scored with cross-validation on Tuesday evening has no Wednesday.** Everything after this builds on it.
-
-### Day 3 — Compare, tune, choose
-
-- Compare **at least three model families** — for example a linear model, a tree-based model and an ensemble — with the same folds, in **`02_pipelines_and_models.ipynb`**.
-- **Tune** the best one or two with `GridSearchCV` or `RandomizedSearchCV`, on the training set.
-- For classification, **choose the threshold** from cross-validated probabilities.
-- Choose your final model, and say why — including when a simpler model is within the noise of the best one.
-- *Image option:* transfer learning — a frozen pretrained network with a new output layer, against your CNN from scratch. Fine-tuning is optional.
-
-### Day 4 — Test once, interpret, communicate
-
-- In **`03_evaluation_and_interpretation.ipynb`**, evaluate the final model **once** on the test set.
-- Analyse the errors: the confusion matrix, or the residuals, and where the model is worst.
-- Explain what drives the predictions with **permutation importance**, and read it with care.
-- **Save the fitted pipeline** with `joblib` and reload it to predict new rows: this is your demo.
-- Write your README, build your slides, and **rehearse once, timed**.
-
-> [!NOTE]
-> **Notebook 03 is your report.** It is read on its own, by someone who has not seen notebooks 01 and 02: the question, the evidence, what you concluded and how far to trust it.
-
-<br>
-
-## Deliverables
-
-Your main deliverable is your GitHub repo, created from this template, containing:
-
-| Item | Description |
-|---|---|
-| `README.md` | Your project: the question, the data and its licence, the metric, the models compared, the final result against the baseline, and how to reproduce it. Replace this brief with your own. |
-| `notebooks/01_eda_and_baseline.ipynb` | Framing, EDA, the split and the baseline. |
-| `notebooks/02_pipelines_and_models.ipynb` | Pipelines, features, the model comparison, tuning and the threshold. |
-| `notebooks/03_evaluation_and_interpretation.ipynb` | **The report.** The test-set evaluation, the error analysis, the interpretation, and saving and reloading the model. |
-| `src/functions.py` | Reusable functions. Your logic lives in functions, not pasted into cells. |
-| `download_data.py` | Left as it is, or extended if you brought your own data. |
-| Slides | Linked or committed in your README, so they can be read after the presentation. Any tool. |
-
-The saved model in `models/` is gitignored: notebook 03 recreates it, so anyone can reproduce it.
-
-### Minimum requirements
-
-Your project must meet all of these to pass:
-
-- **Framing** — a stated target, positive class, user and decision, and a metric chosen from the cost of each mistake.
-- **No leakage** — columns not known at prediction time dropped; the test set used once; every step that learns from data inside the pipeline.
-- **Baseline** — scored with the same cross-validation as the models.
-- **Comparison** — at least **3 model families** on the same folds, with the mean and spread. *Image option:* a CNN from scratch and a transfer-learning model.
-- **Tuning** — the best one or two tuned on the training set.
-- **Evaluation** — the final model evaluated once on the test set, with an error analysis and, for classification, a justified threshold.
-- **Interpretation** — what drives the predictions, explained.
-- **A saved model** — reloaded to predict new data, in the notebook and in the demo.
-
-The full grading rubric is in [`RUBRIC.md`](RUBRIC.md). Read it on launch day — it tells you exactly what is being evaluated.
-
-<br>
-
-## Advanced features (optional)
-
-Not required, but they will strengthen your project:
-
-- **Learning curves** — does more data help? Train on growing fractions and plot the cross-validated score.
-- **Stacking** — a `StackingClassifier` or `StackingRegressor` over your best models, compared fairly with them.
-- **Segmented evaluation** — the error by group (by contract type, by price band, by job), and where the model should not be used.
-- **Cost-based threshold** — put a money value on each kind of mistake and choose the threshold that minimises the total.
-- **A tiny app** — a Streamlit page that loads your saved model and predicts from a form or an uploaded photo.
-- *Image option:* fine-tune the top of the pretrained network after training the new layer, or compare two pretrained networks.
-
-<br>
-
-## Coding best practices
-
-- **Modularise.** Python logic in `src/functions.py` with reusable functions. The notebook is for the narrative.
-- **One seed.** Define `RANDOM_STATE` once and pass it everywhere, so a second run gives the same numbers.
-- **Name clearly.** Descriptive names for variables, functions and columns. `snake_case` throughout.
-- **Clean up.** Remove unused imports, commented-out code and test cells before submitting.
-- **Restart and run all.** Before you commit a notebook, run it top to bottom on a fresh kernel.
-- **Commit often.** Small, frequent commits with descriptive messages. Working in a pair, your partner should know what you worked on from the history alone.
-
-<br>
-
-## Presentation guidelines
-
-| Component | Duration |
-|---|---|
-| Talking with slides | 7 minutes |
-| Live demo | 3 minutes |
-| **Total** | **10 minutes** |
-
-> [!IMPORTANT]
-> **You present from your own machine by sharing your screen.** Use whatever slide tool you prefer. The demo loads your saved model and predicts for new data: a customer, a house, a client, a photo. Have it open and ready before your slot.
-
-### Suggested slide structure (~10 slides)
-
-1. **Title** — project title and your name or names.
-2. **The problem** — what you predict, for whom, and what they would do with it.
-3. **The data** — source and licence, what one row is, the traps you found.
-4. **The metric and the baseline** — why this metric, and the score to beat.
-5. **What you tried** — the model comparison, with the spread.
-6. **The final model** — the test-set result against the baseline and the cross-validated estimate.
-7. **Where it goes wrong** — the error analysis.
-8. **What drives it** — the interpretation, in business terms.
-9. **Conclusions and limitations** — would you use it, and where not?
-10. **Closing** — project title, your name or names, thank you.
-
-<br>
-
-## Repo layout
-
-The notebooks are laid out in sections with the intent of each one written down, and `src/functions.py` holds a few empty stubs that exist only to show the shape. **This is a place to start, not a template to fill in** — rename things, add sections, delete the ones that do not fit your data. You are graded on the work, not on how closely you followed the scaffold.
-
+```text
+Yes = customer churned
+No  = customer stayed
 ```
-.
-├── README.md                                    this brief — replace it with your own
-├── RUBRIC.md                                    how you are graded
-├── requirements.txt
-├── download_data.py                             fetches your chosen dataset into data/raw/
+
+Around **26.5% of customers churned**, so the target is moderately imbalanced.
+
+### Source and licence
+
+Telco customer churn sample data, IBM, from
+[IBM/telco-customer-churn-on-icp4d](https://github.com/IBM/telco-customer-churn-on-icp4d).
+
+Licensed under the **Apache 2.0 licence**.
+
+---
+
+## Business framing
+
+The intended user is a **customer retention team** with limited time and budget.
+
+The model is not intended to automatically decide what happens to a customer. Its job is to help answer:
+
+> **Who should we contact first?**
+
+A second, simpler question supports that decision:
+
+> **Which existing customer characteristics are most strongly associated with churn?**
+
+That second question gives a useful sense-check on whether the final model has learned patterns that make business sense.
+
+For this use case, I considered a **false negative** more costly than a false positive.
+
+A false negative means the model predicts that a customer will stay when they actually leave. That removes the opportunity for the business to intervene.
+
+A false positive means the business contacts someone who would probably have stayed anyway. That wastes some retention time or budget, but is less damaging than missing a genuine churner.
+
+For that reason, I chose **recall for the churn class** as the main model metric.
+
+I also monitored precision, F1 and accuracy so that improving recall did not simply turn into predicting churn for everyone.
+
+---
+
+## Data preparation
+
+A few issues needed dealing with before modelling.
+
+### `TotalCharges`
+
+`TotalCharges` was stored as text rather than a numeric column.
+
+There were **11 blank values**, all belonging to customers with a tenure of 0 months. These were new customers who had not yet accumulated total charges.
+
+I converted the column to numeric and filled these values with `0`.
+
+### `customerID`
+
+`customerID` uniquely identifies individual customers but contains no meaningful information for predicting churn.
+
+It was removed before modelling.
+
+### Train/test split
+
+The data was split once into:
+
+- **80% training data**
+- **20% test data**
+
+using:
+
+```python
+random_state=42
+stratify=y
+```
+
+Stratification kept the proportion of churners approximately equal in both sets.
+
+The test set was then left untouched until the final model had been selected.
+
+---
+
+## Exploratory analysis
+
+Some clear churn patterns appeared before any model was built.
+
+Customers who churned tended to have:
+
+- shorter tenure
+- month-to-month contracts
+- fibre optic internet
+- electronic check payments
+- higher monthly charges
+
+Customers with longer tenure and longer contracts were considerably less likely to churn.
+
+These relationships were useful later when interpreting the final model, but they should not be treated as proof of causation.
+
+---
+
+## Baseline
+
+Before building a real model, I used a `DummyClassifier` that always predicts the majority class.
+
+Because the majority of customers do not churn, this model predicted `No` for everyone.
+
+Its churn recall was:
+
+```text
+0.000
+```
+
+That gives a deliberately low but useful benchmark: any genuine model should be substantially better at finding churners.
+
+---
+
+## Preprocessing pipeline
+
+All preprocessing that learns from the data was kept inside a scikit-learn pipeline.
+
+Numeric features:
+
+```text
+tenure
+MonthlyCharges
+TotalCharges
+```
+
+were:
+
+1. median-imputed where required
+2. standardised with `StandardScaler`
+
+Categorical features were:
+
+1. imputed using the most frequent category
+2. encoded using `OneHotEncoder`
+
+Keeping preprocessing inside the pipeline means that during cross-validation each fold is processed using only information from its own training data.
+
+This avoids data leakage.
+
+---
+
+## Feature engineering
+
+I tested an additional categorical `TenureGroup` feature.
+
+The original Logistic Regression achieved mean cross-validated recall of:
+
+```text
+0.544
+```
+
+With `TenureGroup`:
+
+```text
+0.536
+```
+
+The engineered feature made performance slightly worse, so I did not keep it.
+
+There was no point adding complexity just because I could.
+
+---
+
+## Models compared
+
+I compared three different model families using the **same five cross-validation folds**:
+
+| Model | Mean CV Recall |
+|---|---:|
+| Logistic Regression | 0.544 |
+| Decision Tree | 0.500 |
+| Random Forest | 0.486 |
+| Dummy baseline | 0.000 |
+
+Logistic Regression performed best before tuning.
+
+Decision Tree was reasonably close, so I tuned both Logistic Regression and Decision Tree using `GridSearchCV`.
+
+---
+
+## Model tuning
+
+### Logistic Regression
+
+Best parameters:
+
+```python
+C=1
+class_weight="balanced"
+```
+
+Best cross-validated recall:
+
+```text
+0.801 ± 0.038
+```
+
+### Decision Tree
+
+Best parameters:
+
+```python
+class_weight="balanced"
+max_depth=5
+min_samples_leaf=10
+```
+
+Best cross-validated recall:
+
+```text
+0.781 ± 0.035
+```
+
+The tuned Logistic Regression performed slightly better and was also the simpler model to explain, so I selected it as the final model. The difference in mean recall was only about **0.020**, which is smaller than the normal fold-to-fold variation in either tuned model. That makes simplicity and interpretability a sensible tie-breaker rather than pretending the two models are meaningfully far apart.
+
+Using balanced class weights made a substantial difference. The best Logistic Regression kept the default `C=1`, so the jump from the original 0.544 recall to 0.801 was driven mainly by giving the less common churn class more weight during training.
+
+---
+
+## Classification threshold
+
+I did not assume that the standard probability threshold of `0.50` was automatically correct.
+
+Using cross-validated probabilities from the training set, I compared precision, recall and F1 across a range of thresholds.
+
+The business aim was to catch at least **80% of genuine churners**, while keeping precision as high as possible.
+
+A threshold of:
+
+```text
+0.50
+```
+
+already gave the best balance for that requirement, so I kept it.
+
+This was a decision based on the training data only. The test set was still untouched.
+
+---
+
+# Final test results
+
+The final Logistic Regression pipeline was fitted to the full training set and then evaluated **once** on the untouched test set.
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 0.738 |
+| Precision — Churn | 0.504 |
+| Recall — Churn | **0.783** |
+| F1 — Churn | 0.614 |
+
+The cross-validated estimate of recall had been:
+
+```text
+0.801 ± 0.038
+```
+
+The spread is the standard deviation across the same five stratified cross-validation folds used throughout model comparison.
+
+The final test recall was:
+
+```text
+0.783
+```
+
+a difference of only:
+
+```text
+-0.018
+```
+
+That relatively small drop suggests that the cross-validation estimate generalised reasonably well to unseen customers.
+
+Compared with the baseline recall of **0.000**, the model is clearly doing something useful.
+
+---
+
+## Confusion matrix
+
+On the test set:
+
+| | Predicted Stay | Predicted Churn |
+|---|---:|---:|
+| **Actually stayed** | 747 | 288 |
+| **Actually churned** | 81 | 293 |
+
+The model correctly identified:
+
+```text
+293 of 374 churners
+```
+
+and missed:
+
+```text
+81 churners
+```
+
+At the chosen threshold the model flags **581 of the 1,409 test customers** for retention attention. That queue contains 293 genuine churners and **288 customers who actually stayed**.
+
+For a Head of Customer Service, this is an operational capacity trade-off rather than just a model score: if the team cannot make 581 proactive contacts, the sensible use is to rank the flagged customers by model score and work the highest-risk cases first.
+
+For this use case, I think that is a reasonable trade-off if retention contact is relatively inexpensive.
+
+If contacting customers involved a substantial discount or high operational cost, I would revisit the threshold and accept lower recall in exchange for higher precision.
+
+---
+
+## Where the model gets it wrong
+
+The most confident false negatives were generally customers with:
+
+- long tenure
+- one- or two-year contracts
+- DSL
+- automatic payment methods
+
+In other words, they looked very much like customers who normally stay — but left anyway.
+
+The strongest false positives showed almost the exact opposite pattern:
+
+- very short tenure
+- month-to-month contracts
+- fibre optic internet
+- electronic check payment
+- relatively high monthly charges
+
+These customers looked like classic churn risks according to the historical data, but stayed.
+
+That is a useful reminder that a prediction is a probability, not a fact.
+
+Individual customers can still behave differently from people with otherwise similar profiles.
+
+---
+
+## What drives the predictions?
+
+I used both Logistic Regression coefficients and permutation importance to understand the model.
+
+Permutation importance showed the strongest original features were:
+
+1. **tenure**
+2. **Contract**
+3. **InternetService**
+4. **MonthlyCharges**
+
+Tenure was comfortably the most important.
+
+The coefficient analysis gave some extra detail.
+
+Features associated with higher predicted churn included:
+
+- fibre optic internet
+- month-to-month contracts
+- electronic check payments
+- no online security
+
+Features associated with staying included:
+
+- longer tenure
+- two-year contracts
+- DSL
+
+These results also broadly matched the original exploratory analysis.
+
+The charge-related coefficients need more careful interpretation because `tenure`, `MonthlyCharges` and `TotalCharges` are strongly related to one another.
+
+None of these relationships should be interpreted as proving that a feature **causes** churn.
+
+---
+
+## Business recommendation
+
+I would use this model as a **prioritisation tool for retention outreach**, not as an automatic decision-maker.
+
+It catches around **78% of customers who actually churn**, which makes it useful for narrowing down a large customer base to a higher-risk group.
+
+Its churn precision is around **50%**, however, so not everyone flagged by the model will actually leave.
+
+That means it makes most sense where:
+
+- contacting a customer is relatively cheap
+- there is enough retention capacity to tolerate some unnecessary contacts
+- the model is used alongside normal customer and commercial judgement
+
+I would not use the prediction alone to automatically issue discounts, change contracts or make decisions that have a significant financial impact.
+
+---
+
+## Limitations
+
+This model only knows what exists in this dataset.
+
+It does **not** contain potentially useful information such as:
+
+- recent complaints
+- service outages
+- customer satisfaction scores
+- competitor offers
+- recent support interactions
+- reasons given for previous cancellations
+
+It also represents one historical customer population.
+
+The model probabilities have **not been separately calibrated**, so I would treat them primarily as a ranking signal rather than claiming that a displayed 80% score means a customer has exactly an 80% real-world chance of leaving.
+
+Customer behaviour, pricing, products and competitors change, so model performance should not be assumed to stay the same forever.
+
+In a live business setting I would monitor:
+
+- churn rate
+- recall
+- precision
+- false positive rate
+- changes in feature distributions
+
+and retrain or review the model if performance started to drift.
+
+---
+
+## Saved model and demo
+
+The complete fitted preprocessing and Logistic Regression pipeline is saved using `joblib`.
+
+The classification threshold is saved alongside it.
+
+Notebook 03 reloads the saved model and predicts churn probabilities for new customer records.
+
+For example, three demonstration customers produced:
+
+| Tenure | Contract | Internet | Payment | Churn probability | Prediction |
+|---:|---|---|---|---:|---|
+| 3 | Month-to-month | Fibre optic | Electronic check | 89.2% | Churn |
+| 60 | Two year | DSL | Bank transfer (automatic) | 2.1% | Stay |
+| 18 | One year | Fibre optic | Credit card (automatic) | 62.6% | Churn |
+
+The saved model itself is not committed to GitHub because the `models/` directory is gitignored. It can be recreated by running the notebooks.
+
+---
+
+# Project structure
+
+```text
+project-2-ml/
+│
 ├── data/
-│   ├── raw/                                     downloaded data, gitignored
-│   └── README.md                                the four options, their traps, licences
-├── models/                                      the saved model, gitignored
+│   └── raw/                         # Downloaded data - not committed
+│
+├── models/                          # Generated model - not committed
+│
 ├── notebooks/
-│   ├── 01_eda_and_baseline.ipynb                frame, look, split, baseline
-│   ├── 02_pipelines_and_models.ipynb            pipelines, compare, tune, threshold
-│   └── 03_evaluation_and_interpretation.ipynb   test once, interpret, save, report
-└── src/
-    └── functions.py                             your reusable logic
+│   ├── 01_eda_and_baseline.ipynb
+│   ├── 02_pipelines_and_models.ipynb
+│   └── 03_evaluation_and_interpretation.ipynb
+│
+├── src/
+│   ├── functions.py
+│   └── demo.py                       # Reusable Streamlit scoring helpers
+│
+├── app.py                           # Streamlit retention decision-support demo
+├── alex_telco_churn_presentation.pptx
+├── download_data.py
+├── requirements.txt
+└── README.md
 ```
 
-## Getting set up
+---
+
+# How to reproduce the project
+
+Clone the repository and move into the project folder.
 
 ```bash
-# 1. Click "Use this template" above, then clone YOUR new repo
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
-
-# 2. Check you already have the libraries - a current Anaconda install does.
-#    If this prints, skip to step 3 and install nothing.
-python -c "import pandas, numpy, matplotlib, seaborn, sklearn, joblib; print('all present')"
-
-#    Image option only: TensorFlow is not part of Anaconda.
-python -c "import tensorflow as tf; print(tf.__version__)"
-
-#    Only if a check failed. See the note in requirements.txt first: running pip
-#    against a conda environment can downgrade packages you did not ask about.
-pip install -r requirements.txt
-
-# 3. Download your dataset
-python download_data.py telco        # or: houses, bank, flowers
-
-# 4. Open the first notebook
-jupyter lab notebooks/01_eda_and_baseline.ipynb
+git clone https://github.com/iamlama1982-prog/project-2-ml.git
+cd project-2-ml
 ```
 
-<br>
+Create or activate your Python environment, then install the requirements:
 
-## Tips for success
+```bash
+pip install -r requirements.txt
+```
 
-1. **Choose your data on launch day and commit to it.** Switching mid-week costs you time you do not have.
-2. **Beat the baseline before you beat anyone else.** A model that cannot beat a dummy is not a model.
-3. **Never look at the test set until Thursday.** Every peek makes your final number a little less true.
-4. **Put everything that learns inside the pipeline.** A scaler fitted before the split is the most common way to fool yourself.
-5. **Prefer a simple model you understand** when a complex one is within the noise.
-6. **Commit early and often.** In a pair, so your partner knows what changed; on your own, so you do.
-7. **Ask for help early.** Stuck for more than 30 minutes? Reach out to a classmate, your TA or your teacher.
-8. **Practise the presentation out loud** at least once before Friday. Time yourselves.
-9. **Read [`RUBRIC.md`](RUBRIC.md).** It tells you exactly what is being evaluated.
+Download the Telco dataset:
 
-Good luck. Make something you would trust.
+```bash
+python download_data.py telco
+```
+
+This creates:
+
+```text
+data/raw/telco_churn.csv
+```
+
+Then run the notebooks in order:
+
+```text
+1. notebooks/01_eda_and_baseline.ipynb
+2. notebooks/02_pipelines_and_models.ipynb
+3. notebooks/03_evaluation_and_interpretation.ipynb
+```
+
+Notebook 03 recreates and saves the final model before reloading it for the demonstration predictions.
+
+### Run the Streamlit demo
+
+After the model has been created by notebook 03:
+
+```bash
+streamlit run app.py
+```
+
+The app is built for a **Head of Customer Service / Call Centre** rather than as another EDA dashboard. It provides:
+
+- a ranked retention queue
+- a contact-capacity slider that translates predictions into workload
+- a back-test of how many known churners that capacity would have reached in the held-out demo data
+- CSV upload and prioritised queue export
+- live scoring for one customer, including the strongest row-level model signals
+
+Locally, the app loads the saved fitted pipeline from `models/`. For Streamlit Community Cloud, where model artefacts remain intentionally gitignored, it can recreate the exact documented final pipeline from the IBM source data using the same fixed split and model parameters.
+
+---
+
+## Tools used
+
+- Python
+- pandas
+- NumPy
+- scikit-learn
+- Matplotlib
+- Seaborn
+- joblib
+- Streamlit
+- Jupyter / VS Code
+
+---
+
+## Presentation and demo
+
+Presentation slides: [`alex_telco_churn_presentation.pptx`](alex_telco_churn_presentation.pptx)
+
+Interactive demo: `app.py` (public Streamlit URL added after deployment).
+
+---
+
+## Final takeaway
+
+The final model is not perfect, and that is rather the point.
+
+It does not tell us with certainty who will leave.
+
+What it does do is identify **around 78% of genuine churners** from information already available to the business, with performance on unseen data very close to what cross-validation predicted.
+
+For a retention team trying to decide **where to look first**, that is useful.

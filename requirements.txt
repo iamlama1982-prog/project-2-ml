@@ -1,16 +1,15 @@
 # Minimum versions, not exact pins: most of you are on Anaconda, and hard pins
 # fight an existing conda environment.
 #
-# CHECK BEFORE YOU INSTALL. A current Anaconda install already has everything
-# below except TensorFlow, and running pip against a conda environment can
-# change versions you did not ask it to - we have seen it downgrade numpy,
-# which breaks other packages that were compiled against the newer one. So run
-# this first:
+# CHECK BEFORE YOU INSTALL. A current Anaconda install normally has the core
+# analysis stack below, but Streamlit may need to be installed separately.
+# Running pip against a conda environment can change versions you did not ask
+# it to, so check the analysis packages first:
 #
 #   python -c "import pandas, numpy, matplotlib, seaborn, sklearn, joblib; print('all present')"
 #
-# If that prints, you are done - do not install anything. If it fails, install
-# only what is missing, and prefer conda if that is how you set Python up:
+# If that prints, install only anything that is actually missing, and prefer
+# conda for the analysis stack if that is how you set Python up:
 #
 #   conda install pandas numpy matplotlib seaborn scikit-learn joblib
 #   pip install -r requirements.txt        # or this, in a fresh venv
@@ -29,3 +28,6 @@ ipykernel>=6.0
 # Image option only (flower photos). Not part of Anaconda:
 #   python -c "import tensorflow as tf; print(tf.__version__)"
 # tensorflow>=2.16
+
+# Interactive management demo
+streamlit>=1.40
